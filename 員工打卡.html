@@ -284,12 +284,13 @@
 // ═══════════════════════════════════════════════
 // ⚙️  請修改此處：貼上你的 Google Apps Script 網址
 // ═══════════════════════════════════════════════
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzmTcvkG6MX9LGi83f8VaV-kQOnnmyATHxmj8LaQsGO2labV6K7hviZQ6SR5pKnZ1sWg/exec';
+const GAS_URL = 'YOUR_GAS_WEB_APP_URL_HERE';
 // ═══════════════════════════════════════════════
 
 let gpsCoords = null;
 let employees = [];
 let todayRecord = null;
+let hasOpenRecord = false;  // 目前有尚未下班的紀錄
 let deviceInfo = '';
 
 // Live clock
@@ -375,9 +376,11 @@ async function loadTodayStatus(name) {
     const resp = await fetch(`${GAS_URL}?action=getTodayStatus&name=${encodeURIComponent(name)}`);
     const data = await resp.json();
     todayRecord = data.record || null;
+    hasOpenRecord = data.hasOpenRecord || false;
     renderStatus();
   } catch(e) {
     todayRecord = null;
+    hasOpenRecord = false;
     renderStatus();
   }
 }
@@ -408,12 +411,13 @@ function renderStatus() {
 function updateButtons() {
   const btnIn = document.getElementById('btnIn');
   const btnOut = document.getElementById('btnOut');
-  if (!todayRecord) {
-    btnIn.disabled = false; btnOut.disabled = true;
-  } else if (todayRecord.clockIn && !todayRecord.clockOut) {
-    btnIn.disabled = true; btnOut.disabled = false;
+  // 有尚未下班的紀錄 → 只能下班；否則只能上班
+  if (hasOpenRecord) {
+    btnIn.disabled = true;
+    btnOut.disabled = false;
   } else {
-    btnIn.disabled = true; btnOut.disabled = true;
+    btnIn.disabled = false;
+    btnOut.disabled = true;
   }
 }
 
@@ -422,13 +426,11 @@ async function doClock(type) {
   if (!name) return showError('請先選擇員工姓名');
   clearError();
 
-  // Validation
-  if (type === 'in' && todayRecord && todayRecord.clockIn)
-    return showError('今日已完成上班打卡，不可重複');
-  if (type === 'out' && (!todayRecord || !todayRecord.clockIn))
-    return showError('尚未完成上班打卡，無法下班打卡');
-  if (type === 'out' && todayRecord && todayRecord.clockOut)
-    return showError('今日已完成下班打卡');
+  // Validation：與後端邏輯一致，用 hasOpenRecord 判斷
+  if (type === 'in' && hasOpenRecord)
+    return showError('目前有尚未下班的紀錄，請先打下班卡');
+  if (type === 'out' && !hasOpenRecord)
+    return showError('目前沒有尚未下班的紀錄，請先打上班卡');
 
   // Show loading on button
   const btn = document.getElementById(type === 'in' ? 'btnIn' : 'btnOut');
@@ -456,10 +458,13 @@ async function doClock(type) {
     btn.innerHTML = origHTML;
 
     if (data.success) {
+      // 打上班卡後 → 有尚未下班的紀錄；打下班卡後 → 無
       if (type === 'in') {
         todayRecord = { clockIn: payload.time, clockOut: null };
+        hasOpenRecord = true;
       } else {
-        todayRecord.clockOut = payload.time;
+        if (todayRecord) todayRecord.clockOut = payload.time;
+        hasOpenRecord = false;
       }
       renderStatus(); updateButtons();
       showResult(true, {
