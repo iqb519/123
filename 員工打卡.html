@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>中央廚房 員工打卡</title>
+<style>
+  :root {
+    --orange: #E8650A;
+    --orange-light: #FDF0E6;
+    --orange-dark: #B54E08;
+    --green: #1A7A4A;
+    --green-light: #E8F5EE;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --gray: #F5F4F0;
+    --gray-dark: #888;
+    --text: #1C1C1E;
+    --text-muted: #6B6B70;
+    --border: #E0DDD8;
+    --white: #FFFFFF;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif;
+    background: var(--gray);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* Header */
+  .header {
+    background: var(--orange);
+    color: white;
+    padding: 20px 20px 28px;
+    text-align: center;
+    position: relative;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .header-time {
+    font-size: 38px;
+    font-weight: 200;
+    letter-spacing: 2px;
+    margin: 10px 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .header-date { font-size: 14px; opacity: 0.9; }
+
+  /* Card */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    margin: 16px 16px 0;
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  /* Select */
+  .select-wrapper { position: relative; }
+  .select-wrapper::after {
+    content: '▾';
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 16px; pointer-events: none;
+  }
+  select {
+    width: 100%; height: 54px; padding: 0 44px 0 16px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 17px; color: var(--text); background: var(--white);
+    appearance: none; -webkit-appearance: none; outline: none;
+    font-family: inherit;
+  }
+  select:focus { border-color: var(--orange); }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    margin-top: 14px;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .badge-none { background: #F0F0F0; color: var(--text-muted); }
+  .badge-none .status-dot { background: #CCC; }
+  .badge-in { background: var(--green-light); color: var(--green); }
+  .badge-in .status-dot { background: var(--green); animation: pulse 1.5s infinite; }
+  .badge-out { background: #F0F0F0; color: var(--text-muted); }
+  .badge-out .status-dot { background: #888; }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+
+  /* Clock time display */
+  .clock-times {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-top: 14px;
+  }
+  .time-box {
+    background: var(--gray); border-radius: var(--radius-sm);
+    padding: 12px 14px;
+  }
+  .time-box-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .time-box-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .time-box-value.--empty { color: var(--text-muted); font-weight: 400; }
+
+  /* Buttons */
+  .btn {
+    width: 100%; height: 60px; border: none; border-radius: var(--radius);
+    font-size: 18px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    letter-spacing: 0.5px; transition: transform 0.1s, opacity 0.1s;
+    font-family: inherit;
+  }
+  .btn:active { transform: scale(0.97); opacity: 0.9; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-in { background: var(--orange); color: white; margin-bottom: 12px; }
+  .btn-out { background: var(--green); color: white; }
+  .btn-icon { font-size: 22px; }
+
+  /* GPS indicator */
+  .gps-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted); margin-top: 10px;
+  }
+  .gps-dot { width: 7px; height: 7px; border-radius: 50%; background: #CCC; }
+  .gps-dot.ok { background: var(--green); }
+  .gps-dot.fetching { background: var(--orange); animation: pulse 1s infinite; }
+
+  /* Toast / Result modal */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 100; display: none; align-items: flex-end; justify-content: center;
+    padding: 0 0 env(safe-area-inset-bottom, 0);
+  }
+  .overlay.show { display: flex; }
+  .result-sheet {
+    background: var(--white); border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 480px; padding: 12px 24px 36px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .sheet-handle {
+    width: 36px; height: 4px; background: #DDD; border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+  .result-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; margin: 0 auto 16px;
+  }
+  .result-icon.success { background: var(--green-light); }
+  .result-icon.error { background: var(--red-light); }
+  .result-title { text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .result-title.success { color: var(--green); }
+  .result-title.error { color: var(--red); }
+  .result-info {
+    background: var(--gray); border-radius: var(--radius-sm);
+    padding: 14px 16px; margin: 16px 0;
+  }
+  .result-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 0; font-size: 14px;
+  }
+  .result-row + .result-row { border-top: 1px solid var(--border); }
+  .result-label { color: var(--text-muted); }
+  .result-value { font-weight: 600; }
+  .btn-close {
+    width: 100%; height: 52px; background: var(--text); color: white;
+    border: none; border-radius: var(--radius); font-size: 16px;
+    font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-close:active { opacity: 0.8; }
+
+  /* Loading spinner */
+  .spinner {
+    width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white; border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Error msg */
+  .error-msg {
+    background: var(--red-light); color: var(--red);
+    border-radius: var(--radius-sm); padding: 12px 16px;
+    font-size: 14px; margin-top: 12px; display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* Offline banner */
+  .offline-banner {
+    background: #FF9500; color: white; text-align: center;
+    font-size: 13px; padding: 8px; display: none;
+  }
+  .offline-banner.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="offline-banner" id="offlineBanner">⚠️ 目前離線，打卡需要網路連線</div>
+
+<!-- Header with live clock -->
+<div class="header">
+  <h1>🍳 中央廚房打卡系統</h1>
+  <div class="header-time" id="liveClock">--:--:--</div>
+  <div class="header-date" id="liveDate">載入中...</div>
+</div>
+
+<!-- Step 1: Select employee -->
+<div class="card">
+  <div class="card-title">選擇員工姓名</div>
+  <div class="select-wrapper">
+    <select id="empSelect" onchange="onEmpChange()">
+      <option value="">── 請選擇姓名 ──</option>
+    </select>
+  </div>
+</div>
+
+<!-- Step 2: Today's status -->
+<div class="card" id="statusCard" style="display:none">
+  <div class="card-title">今日出勤狀況</div>
+  <div id="statusBadge" class="status-badge badge-none">
+    <span class="status-dot"></span>
+    <span id="statusText">尚未打卡</span>
+  </div>
+  <div class="clock-times">
+    <div class="time-box">
+      <div class="time-box-label">上班打卡</div>
+      <div class="time-box-value --empty" id="clockInDisplay">--:--</div>
+    </div>
+    <div class="time-box">
+      <div class="time-box-label">下班打卡</div>
+      <div class="time-box-value --empty" id="clockOutDisplay">--:--</div>
+    </div>
+  </div>
+  <div class="gps-row">
+    <div class="gps-dot" id="gpsDot"></div>
+    <span id="gpsText">GPS 定位中...</span>
+  </div>
+</div>
+
+<!-- Step 3: Buttons -->
+<div class="card" id="actionCard" style="display:none">
+  <div class="card-title">打卡操作</div>
+  <button class="btn btn-in" id="btnIn" onclick="doClock('in')">
+    <span class="btn-icon">🟠</span> 上班打卡
+  </button>
+  <button class="btn btn-out" id="btnOut" onclick="doClock('out')">
+    <span class="btn-icon">🟢</span> 下班打卡
+  </button>
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+
+<!-- Result bottom sheet -->
+<div class="overlay" id="overlay" onclick="closeResult()">
+  <div class="result-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="result-icon" id="resultIcon">✅</div>
+    <div class="result-title" id="resultTitle">打卡成功</div>
+    <p style="text-align:center; color:#888; font-size:14px; margin-bottom:4px" id="resultSub"></p>
+    <div class="result-info" id="resultInfo"></div>
+    <button class="btn-close" onclick="closeResult()">確定</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// ⚙️  請修改此處：貼上你的 Google Apps Script 網址
+// ═══════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzmTcvkG6MX9LGi83f8VaV-kQOnnmyATHxmj8LaQsGO2labV6K7hviZQ6SR5pKnZ1sWg/exec';
+// ═══════════════════════════════════════════════
+
+let gpsCoords = null;
+let employees = [];
+let todayRecord = null;
+let deviceInfo = '';
+
+// Live clock
+function updateClock() {
+  const now = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  document.getElementById('liveClock').textContent =
+    now.toTimeString().slice(0,8);
+  document.getElementById('liveDate').textContent =
+    `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（週${days[now.getDay()]}）`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Network check
+window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('show');
+
+// Device info
+deviceInfo = `${navigator.platform} | ${navigator.userAgent.slice(0,80)}`;
+
+// GPS
+function startGPS() {
+  const dot = document.getElementById('gpsDot');
+  const txt = document.getElementById('gpsText');
+  dot.className = 'gps-dot fetching';
+  txt.textContent = 'GPS 定位中...';
+  if (!navigator.geolocation) {
+    txt.textContent = 'GPS 不支援';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+      dot.className = 'gps-dot ok';
+      txt.textContent = `GPS 已定位 (精度 ±${gpsCoords.acc}m)`;
+    },
+    () => {
+      dot.className = 'gps-dot';
+      txt.textContent = 'GPS 定位失敗（不影響打卡）';
+    },
+    { timeout: 8000, maximumAge: 60000 }
+  );
+}
+
+// Load employees
+async function loadEmployees() {
+  try {
+    const resp = await fetch(`${GAS_URL}?action=getEmployees`);
+    const data = await resp.json();
+    if (data.success) {
+      employees = data.employees;
+      const sel = document.getElementById('empSelect');
+      employees.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.name; opt.textContent = e.name;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) {
+    console.error('載入員工失敗', e);
+  }
+}
+
+async function onEmpChange() {
+  const name = document.getElementById('empSelect').value;
+  if (!name) {
+    document.getElementById('statusCard').style.display = 'none';
+    document.getElementById('actionCard').style.display = 'none';
+    return;
+  }
+  document.getElementById('statusCard').style.display = 'block';
+  document.getElementById('actionCard').style.display = 'block';
+  startGPS();
+  await loadTodayStatus(name);
+  updateButtons();
+}
+
+async function loadTodayStatus(name) {
+  document.getElementById('statusText').textContent = '查詢中...';
+  try {
+    const resp = await fetch(`${GAS_URL}?action=getTodayStatus&name=${encodeURIComponent(name)}`);
+    const data = await resp.json();
+    todayRecord = data.record || null;
+    renderStatus();
+  } catch(e) {
+    todayRecord = null;
+    renderStatus();
+  }
+}
+
+function renderStatus() {
+  const badge = document.getElementById('statusBadge');
+  const txt = document.getElementById('statusText');
+  const inD = document.getElementById('clockInDisplay');
+  const outD = document.getElementById('clockOutDisplay');
+  if (!todayRecord) {
+    badge.className = 'status-badge badge-none';
+    txt.textContent = '尚未打卡';
+    inD.textContent = '--:--'; inD.className = 'time-box-value --empty';
+    outD.textContent = '--:--'; outD.className = 'time-box-value --empty';
+  } else if (todayRecord.clockIn && !todayRecord.clockOut) {
+    badge.className = 'status-badge badge-in';
+    txt.textContent = '上班中';
+    inD.textContent = todayRecord.clockIn; inD.className = 'time-box-value';
+    outD.textContent = '--:--'; outD.className = 'time-box-value --empty';
+  } else if (todayRecord.clockIn && todayRecord.clockOut) {
+    badge.className = 'status-badge badge-out';
+    txt.textContent = '已下班';
+    inD.textContent = todayRecord.clockIn; inD.className = 'time-box-value';
+    outD.textContent = todayRecord.clockOut; outD.className = 'time-box-value';
+  }
+}
+
+function updateButtons() {
+  const btnIn = document.getElementById('btnIn');
+  const btnOut = document.getElementById('btnOut');
+  if (!todayRecord) {
+    btnIn.disabled = false; btnOut.disabled = true;
+  } else if (todayRecord.clockIn && !todayRecord.clockOut) {
+    btnIn.disabled = true; btnOut.disabled = false;
+  } else {
+    btnIn.disabled = true; btnOut.disabled = true;
+  }
+}
+
+async function doClock(type) {
+  const name = document.getElementById('empSelect').value;
+  if (!name) return showError('請先選擇員工姓名');
+  clearError();
+
+  // Validation
+  if (type === 'in' && todayRecord && todayRecord.clockIn)
+    return showError('今日已完成上班打卡，不可重複');
+  if (type === 'out' && (!todayRecord || !todayRecord.clockIn))
+    return showError('尚未完成上班打卡，無法下班打卡');
+  if (type === 'out' && todayRecord && todayRecord.clockOut)
+    return showError('今日已完成下班打卡');
+
+  // Show loading on button
+  const btn = document.getElementById(type === 'in' ? 'btnIn' : 'btnOut');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled = true;
+
+  const now = new Date();
+  const payload = {
+    action: 'clockIn',
+    name, type,
+    date: now.toLocaleDateString('zh-TW', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-'),
+    time: now.toTimeString().slice(0,8),
+    gps: gpsCoords ? `${gpsCoords.lat.toFixed(6)},${gpsCoords.lng.toFixed(6)}` : '',
+    device: deviceInfo
+  };
+
+  try {
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    btn.innerHTML = origHTML;
+
+    if (data.success) {
+      if (type === 'in') {
+        todayRecord = { clockIn: payload.time, clockOut: null };
+      } else {
+        todayRecord.clockOut = payload.time;
+      }
+      renderStatus(); updateButtons();
+      showResult(true, {
+        name, date: payload.date,
+        time: payload.time,
+        type: type === 'in' ? '上班打卡' : '下班打卡',
+        msg: data.message || '打卡成功！'
+      });
+    } else {
+      btn.disabled = false;
+      showError(data.message || '打卡失敗，請重試');
+    }
+  } catch(e) {
+    btn.innerHTML = origHTML; btn.disabled = false;
+    showError('網路錯誤，請確認網路後重試');
+  }
+}
+
+function showResult(success, info) {
+  const icon = document.getElementById('resultIcon');
+  const title = document.getElementById('resultTitle');
+  const sub = document.getElementById('resultSub');
+  const infoDiv = document.getElementById('resultInfo');
+  icon.textContent = success ? '✅' : '❌';
+  icon.className = `result-icon ${success ? 'success' : 'error'}`;
+  title.textContent = success ? '打卡成功！' : '打卡失敗';
+  title.className = `result-title ${success ? 'success' : 'error'}`;
+  sub.textContent = info.msg || '';
+  infoDiv.innerHTML = `
+    <div class="result-row"><span class="result-label">員工姓名</span><span class="result-value">${info.name}</span></div>
+    <div class="result-row"><span class="result-label">打卡類型</span><span class="result-value">${info.type}</span></div>
+    <div class="result-row"><span class="result-label">日期</span><span class="result-value">${info.date}</span></div>
+    <div class="result-row"><span class="result-label">時間</span><span class="result-value">${info.time}</span></div>
+  `;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeResult() {
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = '⚠️ ' + msg;
+  el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function clearError() {
+  document.getElementById('errorMsg').classList.remove('show');
+}
+
+// Init
+loadEmployees();
+</script>
+</body>
+</html>

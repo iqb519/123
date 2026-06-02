@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者後台 - 中央廚房打卡系統</title>
+<style>
+  :root {
+    --orange: #E8650A;
+    --orange-light: #FDF0E6;
+    --orange-mid: #F2974A;
+    --green: #1A7A4A;
+    --green-light: #E8F5EE;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --blue: #0A6EC8;
+    --blue-light: #E6F2FD;
+    --bg: #F5F4F0;
+    --white: #FFFFFF;
+    --text: #1C1C1E;
+    --text-muted: #6B6B70;
+    --border: #E0DDD8;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --sidebar-w: 220px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* Layout */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w); background: #1C1C1E; color: white;
+    display: flex; flex-direction: column; position: fixed; height: 100vh;
+    z-index: 50;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidebar-logo h2 { font-size: 16px; font-weight: 700; color: var(--orange-mid); }
+  .sidebar-logo p { font-size: 12px; opacity: 0.5; margin-top: 2px; }
+  .nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 20px; cursor: pointer; font-size: 14px;
+    color: rgba(255,255,255,0.65); transition: all 0.15s;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+  .nav-item.active { background: rgba(232,101,10,0.2); color: var(--orange-mid); border-left-color: var(--orange-mid); }
+  .nav-icon { font-size: 18px; flex-shrink: 0; }
+  .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3); padding: 12px 20px 4px; }
+
+  /* Main content */
+  .main { margin-left: var(--sidebar-w); flex: 1; }
+  .topbar {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 16px 28px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar h1 { font-size: 20px; font-weight: 600; }
+  .topbar-sub { font-size: 13px; color: var(--text-muted); }
+  .content { padding: 24px 28px; }
+
+  /* Sections */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Stats row */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--white); border-radius: var(--radius); padding: 18px 20px;
+    border: 1px solid var(--border);
+  }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-value.orange { color: var(--orange); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.blue { color: var(--blue); }
+
+  /* Card */
+  .card {
+    background: var(--white); border-radius: var(--radius);
+    border: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header h3 { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 20px; }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    background: var(--bg); padding: 10px 14px; text-align: left;
+    font-size: 12px; color: var(--text-muted); font-weight: 600;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid #F5F4F0; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  /* Badge */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 100px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-green { background: var(--green-light); color: var(--green); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+  .badge-gray { background: #F0F0EE; color: var(--text-muted); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+
+  /* Form controls */
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+  .form-group label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  input[type="text"], input[type="date"], input[type="number"], input[type="time"], select {
+    height: 38px; padding: 0 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 14px; color: var(--text);
+    background: var(--white); outline: none; font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--orange); }
+  textarea {
+    padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 14px; color: var(--text);
+    font-family: inherit; resize: vertical; outline: none;
+  }
+  textarea:focus { border-color: var(--orange); }
+
+  /* Buttons */
+  .btn {
+    padding: 9px 18px; border: none; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: opacity 0.15s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--orange); color: white; }
+  .btn-success { background: var(--green); color: white; }
+  .btn-blue { background: var(--blue); color: white; }
+  .btn-danger { background: var(--red); color: white; }
+  .btn-ghost {
+    background: transparent; color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 200; display: none; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--white); border-radius: var(--radius);
+    padding: 24px; width: 100%; max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  /* Loading */
+  .loading-mask {
+    display: none; align-items: center; justify-content: center;
+    padding: 40px; color: var(--text-muted); font-size: 14px; gap: 10px;
+  }
+  .loading-mask.show { display: flex; }
+  .spin {
+    width: 18px; height: 18px; border: 2px solid var(--border);
+    border-top-color: var(--orange); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Alert */
+  .alert {
+    padding: 12px 16px; border-radius: var(--radius-sm);
+    font-size: 14px; margin-bottom: 16px; display: none;
+  }
+  .alert.show { display: block; }
+  .alert-success { background: var(--green-light); color: var(--green); }
+  .alert-error { background: var(--red-light); color: var(--red); }
+
+  /* Salary report table highlight */
+  .salary-total { font-weight: 700; color: var(--orange); }
+
+  /* Employee status toggle */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle {
+    position: relative; width: 44px; height: 24px;
+    background: #DDD; border-radius: 12px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; background: white; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(20px); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .sidebar { width: 56px; }
+    .sidebar-logo, .nav-label, .nav-section { display: none; }
+    .nav-icon { font-size: 20px; }
+    .nav-item { padding: 14px; justify-content: center; }
+    .main { margin-left: 56px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .content { padding: 16px; }
+    .topbar { padding: 14px 16px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <h2>🍳 中央廚房</h2>
+      <p>管理者後台</p>
+    </div>
+    <div class="nav">
+      <div class="nav-section">概覽</div>
+      <div class="nav-item active" onclick="showSection('dashboard')">
+        <span class="nav-icon">📊</span><span class="nav-label">今日總覽</span>
+      </div>
+      <div class="nav-section">出勤</div>
+      <div class="nav-item" onclick="showSection('records')">
+        <span class="nav-icon">🕐</span><span class="nav-label">打卡紀錄</span>
+      </div>
+      <div class="nav-item" onclick="showSection('supplement')">
+        <span class="nav-icon">✏️</span><span class="nav-label">補登/修改打卡</span>
+      </div>
+      <div class="nav-section">薪資</div>
+      <div class="nav-item" onclick="showSection('salary')">
+        <span class="nav-icon">💰</span><span class="nav-label">薪資報表</span>
+      </div>
+      <div class="nav-section">設定</div>
+      <div class="nav-item" onclick="showSection('employees')">
+        <span class="nav-icon">👥</span><span class="nav-label">員工管理</span>
+      </div>
+      <div class="nav-item" onclick="showSection('holidays')">
+        <span class="nav-icon">📅</span><span class="nav-label">假日設定</span>
+      </div>
+      <div class="nav-item" onclick="showSection('changelog')">
+        <span class="nav-icon">📝</span><span class="nav-label">修改紀錄</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar h1" id="pageTitle">今日總覽</div>
+        <div class="topbar-sub" id="pageTime">載入中...</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="refreshPage()">🔄 重新整理</button>
+    </div>
+
+    <div class="content">
+
+      <!-- Dashboard -->
+      <div class="section active" id="sec-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">今日出勤人數</div>
+            <div class="stat-value orange" id="stat-present">－</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">尚未打卡</div>
+            <div class="stat-value" id="stat-absent">－</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">已下班</div>
+            <div class="stat-value green" id="stat-out">－</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">上班中</div>
+            <div class="stat-value blue" id="stat-working">－</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>今日出勤狀況</h3></div>
+          <div class="card-body">
+            <div class="loading-mask show" id="dash-loading"><div class="spin"></div>載入中...</div>
+            <div class="tbl-wrap" id="dash-table" style="display:none">
+              <table>
+                <thead><tr><th>員工姓名</th><th>上班時間</th><th>下班時間</th><th>工時</th><th>狀態</th></tr></thead>
+                <tbody id="dash-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Records -->
+      <div class="section" id="sec-records">
+        <div class="card">
+          <div class="card-header">
+            <h3>打卡紀錄查詢</h3>
+            <button class="btn btn-success btn-sm" onclick="exportExcel()">⬇ 匯出 Excel</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>員工姓名</label>
+                <select id="rec-emp"><option value="">全部員工</option></select>
+              </div>
+              <div class="form-group">
+                <label>開始日期</label>
+                <input type="date" id="rec-start">
+              </div>
+              <div class="form-group">
+                <label>結束日期</label>
+                <input type="date" id="rec-end">
+              </div>
+              <div class="form-group" style="justify-content:flex-end">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" onclick="loadRecords()">🔍 查詢</button>
+              </div>
+            </div>
+            <div class="loading-mask" id="rec-loading"><div class="spin"></div>載入中...</div>
+            <div class="tbl-wrap" id="rec-table" style="display:none">
+              <table>
+                <thead><tr><th>日期</th><th>員工</th><th>類型</th><th>時間</th><th>GPS</th><th>操作</th></tr></thead>
+                <tbody id="rec-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supplement / edit records -->
+      <div class="section" id="sec-supplement">
+        <div class="card">
+          <div class="card-header"><h3>補登打卡紀錄</h3></div>
+          <div class="card-body">
+            <div id="supp-alert" class="alert"></div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>員工姓名 *</label>
+                <select id="supp-emp"><option value="">選擇員工</option></select>
+              </div>
+              <div class="form-group">
+                <label>日期 *</label>
+                <input type="date" id="supp-date">
+              </div>
+              <div class="form-group">
+                <label>上班時間 *</label>
+                <input type="time" id="supp-in">
+              </div>
+              <div class="form-group">
+                <label>下班時間（可空）</label>
+                <input type="time" id="supp-out">
+              </div>
+            </div>
+            <div class="form-group" style="max-width:400px; margin-bottom:16px">
+              <label>補登原因 *</label>
+              <textarea id="supp-reason" rows="2" placeholder="請說明補登原因（必填）"></textarea>
+            </div>
+            <div class="form-group" style="max-width:300px; margin-bottom:0">
+              <label>管理者姓名 *</label>
+              <input type="text" id="supp-admin" placeholder="輸入您的姓名">
+            </div>
+            <div style="margin-top:16px">
+              <button class="btn btn-primary" onclick="submitSupplement()">✅ 送出補登</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Salary Report -->
+      <div class="section" id="sec-salary">
+        <div class="card">
+          <div class="card-header">
+            <h3>薪資報表</h3>
+            <button class="btn btn-success btn-sm" onclick="exportSalaryExcel()">⬇ 匯出 Excel</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label>員工姓名</label>
+                <select id="sal-emp"><option value="">全部員工</option></select>
+              </div>
+              <div class="form-group">
+                <label>起始日期 *</label>
+                <input type="date" id="sal-start">
+              </div>
+              <div class="form-group">
+                <label>結束日期 *</label>
+                <input type="date" id="sal-end">
+              </div>
+              <div class="form-group" style="justify-content:flex-end">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" onclick="loadSalary()">💰 計算薪資</button>
+              </div>
+            </div>
+            <div class="loading-mask" id="sal-loading"><div class="spin"></div>計算中...</div>
+            <div id="sal-table" style="display:none">
+              <div class="tbl-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>員工姓名</th>
+                      <th>平日工時</th>
+                      <th>假日工時</th>
+                      <th>總工時</th>
+                      <th>平日薪資</th>
+                      <th>假日薪資</th>
+                      <th>餐費</th>
+                      <th>應付總額</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sal-tbody"></tbody>
+                  <tfoot id="sal-tfoot"></tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Employees -->
+      <div class="section" id="sec-employees">
+        <div class="card">
+          <div class="card-header">
+            <h3>員工資料管理</h3>
+            <button class="btn btn-primary btn-sm" onclick="openEmpModal()">＋ 新增員工</button>
+          </div>
+          <div class="card-body">
+            <div class="loading-mask show" id="emp-loading"><div class="spin"></div>載入中...</div>
+            <div class="tbl-wrap" id="emp-table" style="display:none">
+              <table>
+                <thead><tr><th>姓名</th><th>平日時薪</th><th>假日時薪</th><th>狀態</th><th>操作</th></tr></thead>
+                <tbody id="emp-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Holidays -->
+      <div class="section" id="sec-holidays">
+        <div class="card">
+          <div class="card-header">
+            <h3>國定假日管理</h3>
+            <button class="btn btn-primary btn-sm" onclick="openHolidayModal()">＋ 新增假日</button>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">
+              ⚠️ 週六、週日自動視為假日，此處只需設定國定假日。
+            </p>
+            <div class="loading-mask show" id="hol-loading"><div class="spin"></div>載入中...</div>
+            <div class="tbl-wrap" id="hol-table" style="display:none">
+              <table>
+                <thead><tr><th>日期</th><th>假日名稱</th><th>操作</th></tr></thead>
+                <tbody id="hol-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change log -->
+      <div class="section" id="sec-changelog">
+        <div class="card">
+          <div class="card-header"><h3>人工修改紀錄</h3></div>
+          <div class="card-body">
+            <div class="loading-mask show" id="log-loading"><div class="spin"></div>載入中...</div>
+            <div class="tbl-wrap" id="log-table" style="display:none">
+              <table>
+                <thead><tr><th>修改時間</th><th>修改人</th><th>類型</th><th>修改前</th><th>修改後</th></tr></thead>
+                <tbody id="log-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .content -->
+  </div><!-- .main -->
+</div><!-- .layout -->
+
+<!-- Employee Modal -->
+<div class="modal-overlay" id="empModal">
+  <div class="modal">
+    <h3 id="empModalTitle">新增員工</h3>
+    <input type="hidden" id="emp-edit-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>員工姓名 *</label>
+        <input type="text" id="emp-name" placeholder="姓名">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>平日時薪 (元) *</label>
+        <input type="number" id="emp-weekday-rate" placeholder="例：200">
+      </div>
+      <div class="form-group">
+        <label>假日時薪 (元) *</label>
+        <input type="number" id="emp-holiday-rate" placeholder="例：266">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>管理者姓名 *</label>
+      <input type="text" id="emp-admin" placeholder="您的姓名（留存修改紀錄）">
+    </div>
+    <div id="emp-modal-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('empModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveEmployee()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Record Modal -->
+<div class="modal-overlay" id="editRecModal">
+  <div class="modal">
+    <h3>修改打卡紀錄</h3>
+    <input type="hidden" id="edit-rec-row">
+    <div class="form-row">
+      <div class="form-group">
+        <label>員工姓名</label>
+        <input type="text" id="edit-rec-name" readonly style="background:#F5F4F0">
+      </div>
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" id="edit-rec-date">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>上班時間</label>
+        <input type="time" id="edit-rec-in">
+      </div>
+      <div class="form-group">
+        <label>下班時間</label>
+        <input type="time" id="edit-rec-out">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>修改原因 *</label>
+      <textarea id="edit-rec-reason" rows="2" placeholder="說明修改原因"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label>管理者姓名 *</label>
+      <input type="text" id="edit-rec-admin" placeholder="您的姓名">
+    </div>
+    <div id="edit-rec-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('editRecModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveEditRecord()">儲存修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- Holiday Modal -->
+<div class="modal-overlay" id="holidayModal">
+  <div class="modal">
+    <h3>新增國定假日</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>日期 *</label>
+        <input type="date" id="hol-date">
+      </div>
+      <div class="form-group">
+        <label>假日名稱 *</label>
+        <input type="text" id="hol-name" placeholder="例：中秋節">
+      </div>
+    </div>
+    <div id="hol-modal-alert" class="alert"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('holidayModal')">取消</button>
+      <button class="btn btn-primary" onclick="saveHoliday()">新增</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// ⚙️  請修改此處：貼上你的 Google Apps Script 網址
+// ═══════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzmTcvkG6MX9LGi83f8VaV-kQOnnmyATHxmj8LaQsGO2labV6K7hviZQ6SR5pKnZ1sWg/exec';
+// ═══════════════════════════════════════════════
+
+let allEmployees = [];
+let currentSection = 'dashboard';
+
+// Page time
+function updateTime() {
+  const now = new Date();
+  document.getElementById('pageTime').textContent =
+    now.toLocaleString('zh-TW');
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// Navigation
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+  currentSection = name;
+  const titles = {
+    dashboard:'今日總覽', records:'打卡紀錄', supplement:'補登/修改打卡',
+    salary:'薪資報表', employees:'員工管理', holidays:'假日設定', changelog:'修改紀錄'
+  };
+  document.getElementById('pageTitle').textContent = titles[name] || name;
+  loadSection(name);
+}
+
+function refreshPage() { loadSection(currentSection); }
+
+function loadSection(name) {
+  if (name === 'dashboard') loadDashboard();
+  else if (name === 'records') initRecords();
+  else if (name === 'supplement') initSupplement();
+  else if (name === 'salary') initSalary();
+  else if (name === 'employees') loadEmployees();
+  else if (name === 'holidays') loadHolidays();
+  else if (name === 'changelog') loadChangelog();
+}
+
+// API helper
+async function api(params, body = null) {
+  if (body) {
+    const r = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify(body)
+    });
+    return r.json();
+  } else {
+    const qs = new URLSearchParams(params).toString();
+    const r = await fetch(`${GAS_URL}?${qs}`);
+    return r.json();
+  }
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+  document.getElementById('dash-loading').classList.add('show');
+  document.getElementById('dash-table').style.display = 'none';
+  try {
+    const d = await api({ action: 'getDashboard' });
+    if (d.success) {
+      document.getElementById('stat-present').textContent = d.stats.present;
+      document.getElementById('stat-absent').textContent = d.stats.absent;
+      document.getElementById('stat-out').textContent = d.stats.out;
+      document.getElementById('stat-working').textContent = d.stats.working;
+      const tbody = document.getElementById('dash-tbody');
+      tbody.innerHTML = '';
+      d.rows.forEach(r => {
+        const hrs = r.hours != null ? r.hours.toFixed(1) + ' hr' : '－';
+        let badge = r.status === 'in'
+          ? '<span class="badge badge-blue">上班中</span>'
+          : r.status === 'out'
+            ? '<span class="badge badge-green">已下班</span>'
+            : '<span class="badge badge-gray">未打卡</span>';
+        tbody.innerHTML += `<tr>
+          <td><b>${r.name}</b></td>
+          <td>${r.clockIn || '－'}</td>
+          <td>${r.clockOut || '－'}</td>
+          <td>${hrs}</td>
+          <td>${badge}</td>
+        </tr>`;
+      });
+      document.getElementById('dash-table').style.display = 'block';
+    }
+  } catch(e) { console.error(e); }
+  document.getElementById('dash-loading').classList.remove('show');
+}
+
+// ── Records ──
+function initRecords() {
+  const today = new Date().toISOString().slice(0,10);
+  const monthAgo = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
+  document.getElementById('rec-start').value = monthAgo;
+  document.getElementById('rec-end').value = today;
+  populateEmpSelect('rec-emp');
+  loadRecords();
+}
+
+async function loadRecords() {
+  document.getElementById('rec-loading').classList.add('show');
+  document.getElementById('rec-table').style.display = 'none';
+  const params = {
+    action: 'getRecords',
+    name: document.getElementById('rec-emp').value,
+    start: document.getElementById('rec-start').value,
+    end: document.getElementById('rec-end').value
+  };
+  try {
+    const d = await api(params);
+    if (d.success) {
+      const tbody = document.getElementById('rec-tbody');
+      tbody.innerHTML = '';
+      d.records.forEach(r => {
+        tbody.innerHTML += `<tr>
+          <td>${r.date}</td>
+          <td>${r.name}</td>
+          <td>${r.type === 'in' ? '<span class="badge badge-orange">上班</span>' : '<span class="badge badge-green">下班</span>'}</td>
+          <td>${r.time}</td>
+          <td style="font-size:12px;color:var(--text-muted)">${r.gps || '－'}</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="openEditRec(${r.row},'${r.name}','${r.date}','${r.clockIn||''}','${r.clockOut||''}')">修改</button></td>
+        </tr>`;
+      });
+      document.getElementById('rec-table').style.display = 'block';
+    }
+  } catch(e) {}
+  document.getElementById('rec-loading').classList.remove('show');
+}
+
+function openEditRec(row, name, date, cin, cout) {
+  document.getElementById('edit-rec-row').value = row;
+  document.getElementById('edit-rec-name').value = name;
+  document.getElementById('edit-rec-date').value = date;
+  document.getElementById('edit-rec-in').value = cin || '';
+  document.getElementById('edit-rec-out').value = cout || '';
+  document.getElementById('edit-rec-reason').value = '';
+  document.getElementById('edit-rec-admin').value = '';
+  document.getElementById('edit-rec-alert').classList.remove('show');
+  document.getElementById('editRecModal').classList.add('show');
+}
+
+async function saveEditRecord() {
+  const reason = document.getElementById('edit-rec-reason').value.trim();
+  const admin = document.getElementById('edit-rec-admin').value.trim();
+  if (!reason) return showModalAlert('edit-rec-alert', '請填寫修改原因', 'error');
+  if (!admin) return showModalAlert('edit-rec-alert', '請填寫管理者姓名', 'error');
+  const body = {
+    action: 'editRecord',
+    row: document.getElementById('edit-rec-row').value,
+    date: document.getElementById('edit-rec-date').value,
+    clockIn: document.getElementById('edit-rec-in').value,
+    clockOut: document.getElementById('edit-rec-out').value,
+    reason, admin
+  };
+  try {
+    const d = await api(null, body);
+    if (d.success) {
+      closeModal('editRecModal');
+      loadRecords();
+    } else showModalAlert('edit-rec-alert', d.message || '儲存失敗', 'error');
+  } catch(e) { showModalAlert('edit-rec-alert', '網路錯誤', 'error'); }
+}
+
+// ── Supplement ──
+function initSupplement() {
+  populateEmpSelect('supp-emp');
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('supp-date').value = today;
+}
+
+async function submitSupplement() {
+  const emp = document.getElementById('supp-emp').value;
+  const date = document.getElementById('supp-date').value;
+  const cin = document.getElementById('supp-in').value;
+  const reason = document.getElementById('supp-reason').value.trim();
+  const admin = document.getElementById('supp-admin').value.trim();
+  if (!emp) return showAlert('supp-alert', '請選擇員工', 'error');
+  if (!date) return showAlert('supp-alert', '請選擇日期', 'error');
+  if (!cin) return showAlert('supp-alert', '請填寫上班時間', 'error');
+  if (!reason) return showAlert('supp-alert', '請填寫補登原因', 'error');
+  if (!admin) return showAlert('supp-alert', '請填寫管理者姓名', 'error');
+  try {
+    const d = await api(null, {
+      action: 'supplement',
+      name: emp, date, clockIn: cin,
+      clockOut: document.getElementById('supp-out').value || '',
+      reason, admin
+    });
+    if (d.success) showAlert('supp-alert', '✅ 補登成功！', 'success');
+    else showAlert('supp-alert', d.message || '補登失敗', 'error');
+  } catch(e) { showAlert('supp-alert', '網路錯誤', 'error'); }
+}
+
+// ── Salary ──
+function initSalary() {
+  const today = new Date().toISOString().slice(0,10);
+  const first = new Date(); first.setDate(1);
+  document.getElementById('sal-start').value = first.toISOString().slice(0,10);
+  document.getElementById('sal-end').value = today;
+  populateEmpSelect('sal-emp');
+}
+
+async function loadSalary() {
+  const start = document.getElementById('sal-start').value;
+  const end = document.getElementById('sal-end').value;
+  if (!start || !end) return alert('請選擇日期區間');
+  document.getElementById('sal-loading').classList.add('show');
+  document.getElementById('sal-table').style.display = 'none';
+  try {
+    const d = await api({
+      action: 'getSalary',
+      name: document.getElementById('sal-emp').value,
+      start, end
+    });
+    if (d.success) {
+      const tbody = document.getElementById('sal-tbody');
+      const tfoot = document.getElementById('sal-tfoot');
+      tbody.innerHTML = '';
+      let totWd=0, totHd=0, totHrs=0, totWdPay=0, totHdPay=0, totMeal=0, totPay=0;
+      d.rows.forEach(r => {
+        totWd+=r.weekdayHours; totHd+=r.holidayHours; totHrs+=r.totalHours;
+        totWdPay+=r.weekdayPay; totHdPay+=r.holidayPay; totMeal+=r.meal; totPay+=r.total;
+        tbody.innerHTML += `<tr>
+          <td><b>${r.name}</b></td>
+          <td>${r.weekdayHours.toFixed(2)}</td>
+          <td>${r.holidayHours.toFixed(2)}</td>
+          <td>${r.totalHours.toFixed(2)}</td>
+          <td>$${r.weekdayPay.toLocaleString()}</td>
+          <td>$${r.holidayPay.toLocaleString()}</td>
+          <td>$${r.meal.toLocaleString()}</td>
+          <td class="salary-total">$${r.total.toLocaleString()}</td>
+        </tr>`;
+      });
+      tfoot.innerHTML = `<tr style="background:var(--bg);font-weight:700">
+        <td>合計</td>
+        <td>${totWd.toFixed(2)}</td>
+        <td>${totHd.toFixed(2)}</td>
+        <td>${totHrs.toFixed(2)}</td>
+        <td>$${totWdPay.toLocaleString()}</td>
+        <td>$${totHdPay.toLocaleString()}</td>
+        <td>$${totMeal.toLocaleString()}</td>
+        <td class="salary-total">$${totPay.toLocaleString()}</td>
+      </tr>`;
+      document.getElementById('sal-table').style.display = 'block';
+    }
+  } catch(e) { alert('載入失敗'); }
+  document.getElementById('sal-loading').classList.remove('show');
+}
+
+async function exportSalaryExcel() {
+  const start = document.getElementById('sal-start').value;
+  const end = document.getElementById('sal-end').value;
+  if (!start || !end) return alert('請先設定日期區間並計算薪資');
+  const url = `${GAS_URL}?action=exportSalary&name=${document.getElementById('sal-emp').value}&start=${start}&end=${end}`;
+  window.open(url, '_blank');
+}
+
+async function exportExcel() {
+  const url = `${GAS_URL}?action=exportRecords&name=${document.getElementById('rec-emp').value}&start=${document.getElementById('rec-start').value}&end=${document.getElementById('rec-end').value}`;
+  window.open(url, '_blank');
+}
+
+// ── Employees ──
+async function loadEmployees() {
+  document.getElementById('emp-loading').classList.add('show');
+  document.getElementById('emp-table').style.display = 'none';
+  try {
+    const d = await api({ action: 'getEmployees', all: true });
+    if (d.success) {
+      allEmployees = d.employees;
+      const tbody = document.getElementById('emp-tbody');
+      tbody.innerHTML = '';
+      allEmployees.forEach(e => {
+        const tog = `<div class="toggle-wrap">
+          <div class="toggle ${e.active ? 'on' : ''}" onclick="toggleEmployee('${e.name}',${!e.active},this)"></div>
+          <span style="font-size:13px">${e.active ? '啟用' : '停用'}</span>
+        </div>`;
+        tbody.innerHTML += `<tr>
+          <td><b>${e.name}</b></td>
+          <td>$${e.weekdayRate}/hr</td>
+          <td>$${e.holidayRate}/hr</td>
+          <td>${tog}</td>
+          <td><button class="btn btn-ghost btn-sm" onclick="openEmpModal('${e.name}',${e.weekdayRate},${e.holidayRate})">修改</button></td>
+        </tr>`;
+      });
+      document.getElementById('emp-table').style.display = 'block';
+    }
+  } catch(e) {}
+  document.getElementById('emp-loading').classList.remove('show');
+}
+
+function openEmpModal(name='', wd='', hd='') {
+  document.getElementById('empModalTitle').textContent = name ? '修改員工資料' : '新增員工';
+  document.getElementById('emp-edit-id').value = name;
+  document.getElementById('emp-name').value = name;
+  document.getElementById('emp-name').readOnly = !!name;
+  document.getElementById('emp-weekday-rate').value = wd;
+  document.getElementById('emp-holiday-rate').value = hd;
+  document.getElementById('emp-admin').value = '';
+  document.getElementById('emp-modal-alert').classList.remove('show');
+  document.getElementById('empModal').classList.add('show');
+}
+
+async function saveEmployee() {
+  const name = document.getElementById('emp-name').value.trim();
+  const wd = document.getElementById('emp-weekday-rate').value;
+  const hd = document.getElementById('emp-holiday-rate').value;
+  const admin = document.getElementById('emp-admin').value.trim();
+  if (!name) return showModalAlert('emp-modal-alert','請填寫員工姓名','error');
+  if (!wd || !hd) return showModalAlert('emp-modal-alert','請填寫時薪','error');
+  if (!admin) return showModalAlert('emp-modal-alert','請填寫管理者姓名','error');
+  const isEdit = !!document.getElementById('emp-edit-id').value;
+  try {
+    const d = await api(null, {
+      action: isEdit ? 'editEmployee' : 'addEmployee',
+      name, weekdayRate: +wd, holidayRate: +hd, admin
+    });
+    if (d.success) { closeModal('empModal'); loadEmployees(); populateEmpSelect('rec-emp'); populateEmpSelect('sal-emp'); populateEmpSelect('supp-emp'); }
+    else showModalAlert('emp-modal-alert', d.message || '儲存失敗', 'error');
+  } catch(e) { showModalAlert('emp-modal-alert','網路錯誤','error'); }
+}
+
+async function toggleEmployee(name, active, el) {
+  try {
+    const d = await api(null, { action: 'toggleEmployee', name, active });
+    if (d.success) {
+      el.className = `toggle ${active ? 'on' : ''}`;
+      el.nextElementSibling.textContent = active ? '啟用' : '停用';
+    }
+  } catch(e) {}
+}
+
+// ── Holidays ──
+async function loadHolidays() {
+  document.getElementById('hol-loading').classList.add('show');
+  document.getElementById('hol-table').style.display = 'none';
+  try {
+    const d = await api({ action: 'getHolidays' });
+    if (d.success) {
+      const tbody = document.getElementById('hol-tbody');
+      tbody.innerHTML = '';
+      d.holidays.forEach(h => {
+        tbody.innerHTML += `<tr>
+          <td>${h.date}</td>
+          <td>${h.name}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteHoliday('${h.date}')">刪除</button></td>
+        </tr>`;
+      });
+      document.getElementById('hol-table').style.display = 'block';
+    }
+  } catch(e) {}
+  document.getElementById('hol-loading').classList.remove('show');
+}
+
+function openHolidayModal() {
+  document.getElementById('hol-date').value = '';
+  document.getElementById('hol-name').value = '';
+  document.getElementById('hol-modal-alert').classList.remove('show');
+  document.getElementById('holidayModal').classList.add('show');
+}
+
+async function saveHoliday() {
+  const date = document.getElementById('hol-date').value;
+  const name = document.getElementById('hol-name').value.trim();
+  if (!date) return showModalAlert('hol-modal-alert','請選擇日期','error');
+  if (!name) return showModalAlert('hol-modal-alert','請填寫假日名稱','error');
+  try {
+    const d = await api(null, { action: 'addHoliday', date, name });
+    if (d.success) { closeModal('holidayModal'); loadHolidays(); }
+    else showModalAlert('hol-modal-alert', d.message || '新增失敗', 'error');
+  } catch(e) { showModalAlert('hol-modal-alert','網路錯誤','error'); }
+}
+
+async function deleteHoliday(date) {
+  if (!confirm(`確定刪除 ${date} 的假日設定？`)) return;
+  try {
+    await api(null, { action: 'deleteHoliday', date });
+    loadHolidays();
+  } catch(e) {}
+}
+
+// ── Changelog ──
+async function loadChangelog() {
+  document.getElementById('log-loading').classList.add('show');
+  document.getElementById('log-table').style.display = 'none';
+  try {
+    const d = await api({ action: 'getChangelog' });
+    if (d.success) {
+      const tbody = document.getElementById('log-tbody');
+      tbody.innerHTML = '';
+      d.logs.forEach(l => {
+        tbody.innerHTML += `<tr>
+          <td style="font-size:12px">${l.time}</td>
+          <td>${l.admin}</td>
+          <td><span class="badge badge-orange">${l.type}</span></td>
+          <td style="font-size:12px;color:var(--text-muted)">${l.before}</td>
+          <td style="font-size:12px">${l.after}</td>
+        </tr>`;
+      });
+      document.getElementById('log-table').style.display = 'block';
+    }
+  } catch(e) {}
+  document.getElementById('log-loading').classList.remove('show');
+}
+
+// ── Helpers ──
+async function populateEmpSelect(id) {
+  try {
+    const d = await api({ action: 'getEmployees' });
+    if (d.success) {
+      const sel = document.getElementById(id);
+      const current = sel.value;
+      while (sel.options.length > 1) sel.remove(1);
+      d.employees.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.name; opt.textContent = e.name;
+        sel.appendChild(opt);
+      });
+      sel.value = current;
+    }
+  } catch(e) {}
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `alert alert-${type} show`;
+}
+
+function showModalAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `alert alert-${type} show`;
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
+});
+
+// Init
+loadDashboard();
+populateEmpSelect('rec-emp');
+populateEmpSelect('sal-emp');
+populateEmpSelect('supp-emp');
+</script>
+</body>
+</html>
