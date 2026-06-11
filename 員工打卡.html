@@ -15,8 +15,9 @@
     --green-light: #E8F5EE;
     --red: #C0392B;
     --red-light: #FDECEA;
+    --blue: #0A6EC8;
+    --blue-light: #E6F2FD;
     --gray: #F5F4F0;
-    --gray-dark: #888;
     --text: #1C1C1E;
     --text-muted: #6B6B70;
     --border: #E0DDD8;
@@ -39,42 +40,37 @@
     color: white;
     padding: 20px 20px 28px;
     text-align: center;
-    position: relative;
   }
   .header h1 { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
-  .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
   .header-time {
-    font-size: 38px;
-    font-weight: 200;
-    letter-spacing: 2px;
-    margin: 10px 0 4px;
-    font-variant-numeric: tabular-nums;
+    font-size: 38px; font-weight: 200; letter-spacing: 2px;
+    margin: 10px 0 4px; font-variant-numeric: tabular-nums;
   }
   .header-date { font-size: 14px; opacity: 0.9; }
 
   /* Card */
   .card {
-    background: var(--white);
-    border-radius: var(--radius);
-    margin: 16px 16px 0;
-    padding: 20px;
+    background: var(--white); border-radius: var(--radius);
+    margin: 16px 16px 0; padding: 20px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
   }
   .card-title {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    margin-bottom: 14px;
-    font-weight: 600;
+    font-size: 12px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin-bottom: 14px; font-weight: 600;
   }
+  .card-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .card-title-row .card-title { margin-bottom: 0; }
 
   /* Select */
   .select-wrapper { position: relative; }
   .select-wrapper::after {
-    content: '▾';
-    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-    color: var(--text-muted); font-size: 16px; pointer-events: none;
+    content: '▾'; position: absolute; right: 16px; top: 50%;
+    transform: translateY(-50%); color: var(--text-muted);
+    font-size: 16px; pointer-events: none;
   }
   select {
     width: 100%; height: 54px; padding: 0 44px 0 16px;
@@ -85,12 +81,22 @@
   }
   select:focus { border-color: var(--orange); }
 
+  /* Add member button (small, inline) */
+  .btn-add-member {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px; border: 1.5px solid var(--orange);
+    border-radius: 100px; font-size: 13px; font-weight: 600;
+    color: var(--orange); background: var(--orange-light);
+    cursor: pointer; white-space: nowrap; font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .btn-add-member:active { opacity: 0.7; }
+
   /* Status badge */
   .status-badge {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 6px 14px; border-radius: 100px;
-    font-size: 13px; font-weight: 600;
-    margin-top: 14px;
+    font-size: 13px; font-weight: 600; margin-top: 14px;
   }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; }
   .badge-none { background: #F0F0F0; color: var(--text-muted); }
@@ -99,22 +105,28 @@
   .badge-in .status-dot { background: var(--green); animation: pulse 1.5s infinite; }
   .badge-out { background: #F0F0F0; color: var(--text-muted); }
   .badge-out .status-dot { background: #888; }
-  @keyframes pulse {
-    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
-  }
+  .badge-night { background: #EDE9FE; color: #5B21B6; }
+  .badge-night .status-dot { background: #7C3AED; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
   /* Clock time display */
   .clock-times {
     display: grid; grid-template-columns: 1fr 1fr;
     gap: 10px; margin-top: 14px;
   }
-  .time-box {
-    background: var(--gray); border-radius: var(--radius-sm);
-    padding: 12px 14px;
-  }
+  .time-box { background: var(--gray); border-radius: var(--radius-sm); padding: 12px 14px; }
   .time-box-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
   .time-box-value { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .time-box-value.--empty { color: var(--text-muted); font-weight: 400; }
+  .time-box-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Night shift notice */
+  .night-notice {
+    background: #EDE9FE; border-radius: var(--radius-sm);
+    padding: 10px 14px; margin-top: 12px;
+    font-size: 13px; color: #5B21B6; display: none;
+  }
+  .night-notice.show { display: block; }
 
   /* Buttons */
   .btn {
@@ -130,16 +142,16 @@
   .btn-out { background: var(--green); color: white; }
   .btn-icon { font-size: 22px; }
 
-  /* GPS indicator */
+  /* GPS */
   .gps-row {
     display: flex; align-items: center; gap: 8px;
     font-size: 12px; color: var(--text-muted); margin-top: 10px;
   }
-  .gps-dot { width: 7px; height: 7px; border-radius: 50%; background: #CCC; }
+  .gps-dot { width: 7px; height: 7px; border-radius: 50%; background: #CCC; flex-shrink: 0; }
   .gps-dot.ok { background: var(--green); }
   .gps-dot.fetching { background: var(--orange); animation: pulse 1s infinite; }
 
-  /* Toast / Result modal */
+  /* Result overlay */
   .overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.5);
     z-index: 100; display: none; align-items: flex-end; justify-content: center;
@@ -151,10 +163,7 @@
     width: 100%; max-width: 480px; padding: 12px 24px 36px;
     animation: slideUp 0.3s ease;
   }
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .sheet-handle {
     width: 36px; height: 4px; background: #DDD; border-radius: 2px;
     margin: 0 auto 20px;
@@ -184,11 +193,37 @@
     width: 100%; height: 52px; background: var(--text); color: white;
     border: none; border-radius: var(--radius); font-size: 16px;
     font-weight: 600; cursor: pointer; font-family: inherit;
-    transition: opacity 0.15s;
   }
   .btn-close:active { opacity: 0.8; }
 
-  /* Loading spinner */
+  /* Add member modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 200; display: none; align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: var(--white); border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 480px; padding: 12px 24px 36px;
+    animation: slideUp 0.3s ease;
+  }
+  .modal-sheet h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+  .modal-sheet p { font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 20px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
+  .field input {
+    width: 100%; height: 48px; padding: 0 14px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 16px; color: var(--text); font-family: inherit; outline: none;
+  }
+  .field input:focus { border-color: var(--orange); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .modal-btns .btn { height: 52px; font-size: 16px; }
+  .btn-cancel { background: var(--gray); color: var(--text); flex: 0 0 90px; }
+  .btn-confirm { background: var(--orange); color: white; flex: 1; }
+
+  /* Spinner */
   .spinner {
     width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3);
     border-top-color: white; border-radius: 50%;
@@ -196,13 +231,20 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Error msg */
+  /* Error / alert msg */
   .error-msg {
     background: var(--red-light); color: var(--red);
     border-radius: var(--radius-sm); padding: 12px 16px;
     font-size: 14px; margin-top: 12px; display: none;
   }
   .error-msg.show { display: block; }
+  .modal-alert {
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 13px; margin-top: 10px; display: none;
+  }
+  .modal-alert.show { display: block; }
+  .modal-alert.error { background: var(--red-light); color: var(--red); }
+  .modal-alert.success { background: var(--green-light); color: var(--green); }
 
   /* Offline banner */
   .offline-banner {
@@ -216,16 +258,18 @@
 
 <div class="offline-banner" id="offlineBanner">⚠️ 目前離線，打卡需要網路連線</div>
 
-<!-- Header with live clock -->
 <div class="header">
   <h1>🍳 中央廚房打卡系統</h1>
   <div class="header-time" id="liveClock">--:--:--</div>
   <div class="header-date" id="liveDate">載入中...</div>
 </div>
 
-<!-- Step 1: Select employee -->
+<!-- 選擇員工 -->
 <div class="card">
-  <div class="card-title">選擇員工姓名</div>
+  <div class="card-title-row">
+    <span class="card-title">選擇員工姓名</span>
+    <button class="btn-add-member" onclick="openAddMember()">＋ 新增人員</button>
+  </div>
   <div class="select-wrapper">
     <select id="empSelect" onchange="onEmpChange()">
       <option value="">── 請選擇姓名 ──</option>
@@ -233,7 +277,7 @@
   </div>
 </div>
 
-<!-- Step 2: Today's status -->
+<!-- 今日狀態 -->
 <div class="card" id="statusCard" style="display:none">
   <div class="card-title">今日出勤狀況</div>
   <div id="statusBadge" class="status-badge badge-none">
@@ -244,11 +288,16 @@
     <div class="time-box">
       <div class="time-box-label">上班打卡</div>
       <div class="time-box-value --empty" id="clockInDisplay">--:--</div>
+      <div class="time-box-date" id="clockInDate"></div>
     </div>
     <div class="time-box">
       <div class="time-box-label">下班打卡</div>
       <div class="time-box-value --empty" id="clockOutDisplay">--:--</div>
+      <div class="time-box-date" id="clockOutDate"></div>
     </div>
+  </div>
+  <div class="night-notice" id="nightNotice">
+    🌙 偵測到跨夜班，下班打卡將記錄在隔天日期
   </div>
   <div class="gps-row">
     <div class="gps-dot" id="gpsDot"></div>
@@ -256,7 +305,7 @@
   </div>
 </div>
 
-<!-- Step 3: Buttons -->
+<!-- 打卡按鈕 -->
 <div class="card" id="actionCard" style="display:none">
   <div class="card-title">打卡操作</div>
   <button class="btn btn-in" id="btnIn" onclick="doClock('in')">
@@ -268,15 +317,43 @@
   <div class="error-msg" id="errorMsg"></div>
 </div>
 
-<!-- Result bottom sheet -->
+<!-- 打卡結果 bottom sheet -->
 <div class="overlay" id="overlay" onclick="closeResult()">
   <div class="result-sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
     <div class="result-icon" id="resultIcon">✅</div>
     <div class="result-title" id="resultTitle">打卡成功</div>
-    <p style="text-align:center; color:#888; font-size:14px; margin-bottom:4px" id="resultSub"></p>
+    <p style="text-align:center;color:#888;font-size:14px;margin-bottom:4px" id="resultSub"></p>
     <div class="result-info" id="resultInfo"></div>
     <button class="btn-close" onclick="closeResult()">確定</button>
+  </div>
+</div>
+
+<!-- 新增人員 modal -->
+<div class="modal-overlay" id="addMemberModal" onclick="handleModalOverlayClick(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <h3>新增人員</h3>
+    <p>填寫基本資料後即可加入打卡名單</p>
+    <div class="field">
+      <label>姓名 *</label>
+      <input type="text" id="newName" placeholder="輸入員工姓名" maxlength="20">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>平日時薪（元）</label>
+        <input type="number" id="newWeekday" placeholder="例：200" min="0">
+      </div>
+      <div class="field">
+        <label>假日時薪（元）</label>
+        <input type="number" id="newHoliday" placeholder="例：266" min="0">
+      </div>
+    </div>
+    <div class="modal-alert" id="addAlert"></div>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeAddMember()">取消</button>
+      <button class="btn btn-confirm" id="btnConfirmAdd" onclick="submitAddMember()">新增</button>
+    </div>
   </div>
 </div>
 
@@ -290,54 +367,71 @@ const GAS_URL = 'YOUR_GAS_WEB_APP_URL_HERE';
 let gpsCoords = null;
 let employees = [];
 let todayRecord = null;
-let hasOpenRecord = false;  // 目前有尚未下班的紀錄
+let hasOpenRecord = false;
+let openRecordClockInDate = null; // 上班打卡的日期（隔夜判斷用）
 let deviceInfo = '';
 
-// Live clock
+// ── 時鐘 ──
 function updateClock() {
   const now = new Date();
   const days = ['日','一','二','三','四','五','六'];
-  document.getElementById('liveClock').textContent =
-    now.toTimeString().slice(0,8);
+  document.getElementById('liveClock').textContent = now.toTimeString().slice(0,8);
   document.getElementById('liveDate').textContent =
     `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（週${days[now.getDay()]}）`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// Network check
-window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
+// ── 網路狀態 ──
+window.addEventListener('online',  () => document.getElementById('offlineBanner').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
 if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('show');
 
-// Device info
 deviceInfo = `${navigator.platform} | ${navigator.userAgent.slice(0,80)}`;
 
-// GPS
+// ── GPS ──
 function startGPS() {
   const dot = document.getElementById('gpsDot');
   const txt = document.getElementById('gpsText');
   dot.className = 'gps-dot fetching';
   txt.textContent = 'GPS 定位中...';
-  if (!navigator.geolocation) {
-    txt.textContent = 'GPS 不支援';
-    return;
-  }
+  if (!navigator.geolocation) { txt.textContent = 'GPS 不支援'; return; }
   navigator.geolocation.getCurrentPosition(
     pos => {
       gpsCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
       dot.className = 'gps-dot ok';
       txt.textContent = `GPS 已定位 (精度 ±${gpsCoords.acc}m)`;
     },
-    () => {
-      dot.className = 'gps-dot';
-      txt.textContent = 'GPS 定位失敗（不影響打卡）';
-    },
+    () => { dot.className = 'gps-dot'; txt.textContent = 'GPS 定位失敗（不影響打卡）'; },
     { timeout: 8000, maximumAge: 60000 }
   );
 }
 
-// Load employees
+// ── 取得目前的台灣日期字串 YYYY-MM-DD ──
+function getTodayStr() {
+  // 使用 Asia/Taipei 時區
+  return new Date().toLocaleDateString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  }).replace(/\//g, '-');
+}
+
+// 取得目前時間字串 HH:MM:SS（台灣時區）
+function getNowTimeStr() {
+  return new Date().toLocaleTimeString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  });
+}
+
+// 判斷是否跨夜：上班日期 != 今天，代表昨天上班、今天要打下班
+function isOvernightShift() {
+  if (!openRecordClockInDate) return false;
+  return openRecordClockInDate !== getTodayStr();
+}
+
+// ── 載入員工清單 ──
 async function loadEmployees() {
   try {
     const resp = await fetch(`${GAS_URL}?action=getEmployees`);
@@ -345,15 +439,15 @@ async function loadEmployees() {
     if (data.success) {
       employees = data.employees;
       const sel = document.getElementById('empSelect');
+      // 清除舊選項（保留第一個 placeholder）
+      while (sel.options.length > 1) sel.remove(1);
       employees.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.name; opt.textContent = e.name;
         sel.appendChild(opt);
       });
     }
-  } catch(e) {
-    console.error('載入員工失敗', e);
-  }
+  } catch(e) { console.error('載入員工失敗', e); }
 }
 
 async function onEmpChange() {
@@ -377,41 +471,60 @@ async function loadTodayStatus(name) {
     const data = await resp.json();
     todayRecord = data.record || null;
     hasOpenRecord = data.hasOpenRecord || false;
+    openRecordClockInDate = data.openRecordDate || null; // 後端回傳上班的日期
     renderStatus();
   } catch(e) {
-    todayRecord = null;
-    hasOpenRecord = false;
+    todayRecord = null; hasOpenRecord = false; openRecordClockInDate = null;
     renderStatus();
   }
 }
 
 function renderStatus() {
-  const badge = document.getElementById('statusBadge');
-  const txt = document.getElementById('statusText');
-  const inD = document.getElementById('clockInDisplay');
-  const outD = document.getElementById('clockOutDisplay');
-  if (!todayRecord) {
+  const badge  = document.getElementById('statusBadge');
+  const txt    = document.getElementById('statusText');
+  const inD    = document.getElementById('clockInDisplay');
+  const outD   = document.getElementById('clockOutDisplay');
+  const inDate = document.getElementById('clockInDate');
+  const outDate= document.getElementById('clockOutDate');
+  const nightNotice = document.getElementById('nightNotice');
+
+  inDate.textContent = '';
+  outDate.textContent = '';
+  nightNotice.classList.remove('show');
+
+  if (!todayRecord && !hasOpenRecord) {
     badge.className = 'status-badge badge-none';
     txt.textContent = '尚未打卡';
     inD.textContent = '--:--'; inD.className = 'time-box-value --empty';
     outD.textContent = '--:--'; outD.className = 'time-box-value --empty';
-  } else if (todayRecord.clockIn && !todayRecord.clockOut) {
-    badge.className = 'status-badge badge-in';
-    txt.textContent = '上班中';
-    inD.textContent = todayRecord.clockIn; inD.className = 'time-box-value';
+  } else if (hasOpenRecord) {
+    // 有尚未下班的紀錄
+    const overnight = isOvernightShift();
+    if (overnight) {
+      badge.className = 'status-badge badge-night';
+      txt.textContent = '上班中（跨夜班）';
+      nightNotice.classList.add('show');
+    } else {
+      badge.className = 'status-badge badge-in';
+      txt.textContent = '上班中';
+    }
+    inD.textContent = todayRecord?.clockIn || '--:--';
+    inD.className = 'time-box-value';
+    if (openRecordClockInDate) inDate.textContent = openRecordClockInDate;
     outD.textContent = '--:--'; outD.className = 'time-box-value --empty';
-  } else if (todayRecord.clockIn && todayRecord.clockOut) {
+  } else if (todayRecord && todayRecord.clockIn && todayRecord.clockOut) {
     badge.className = 'status-badge badge-out';
     txt.textContent = '已下班';
     inD.textContent = todayRecord.clockIn; inD.className = 'time-box-value';
     outD.textContent = todayRecord.clockOut; outD.className = 'time-box-value';
+    if (todayRecord.clockInDate)  inDate.textContent  = todayRecord.clockInDate;
+    if (todayRecord.clockOutDate) outDate.textContent = todayRecord.clockOutDate;
   }
 }
 
 function updateButtons() {
-  const btnIn = document.getElementById('btnIn');
+  const btnIn  = document.getElementById('btnIn');
   const btnOut = document.getElementById('btnOut');
-  // 有尚未下班的紀錄 → 只能下班；否則只能上班
   if (hasOpenRecord) {
     btnIn.disabled = true;
     btnOut.disabled = false;
@@ -421,29 +534,32 @@ function updateButtons() {
   }
 }
 
+// ── 打卡 ──
 async function doClock(type) {
   const name = document.getElementById('empSelect').value;
   if (!name) return showError('請先選擇員工姓名');
   clearError();
 
-  // Validation：與後端邏輯一致，用 hasOpenRecord 判斷
   if (type === 'in' && hasOpenRecord)
     return showError('目前有尚未下班的紀錄，請先打下班卡');
   if (type === 'out' && !hasOpenRecord)
     return showError('目前沒有尚未下班的紀錄，請先打上班卡');
 
-  // Show loading on button
   const btn = document.getElementById(type === 'in' ? 'btnIn' : 'btnOut');
   const origHTML = btn.innerHTML;
   btn.innerHTML = '<div class="spinner"></div>';
   btn.disabled = true;
 
+  // ★ 隔夜處理：下班時若日期已跨到隔天，date 傳今天（下班日）
   const now = new Date();
+  const clockDate = getTodayStr();
+  const clockTime = getNowTimeStr();
+
   const payload = {
     action: 'clockIn',
     name, type,
-    date: now.toLocaleDateString('zh-TW', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-'),
-    time: now.toTimeString().slice(0,8),
+    date: clockDate,
+    time: clockTime,
     gps: gpsCoords ? `${gpsCoords.lat.toFixed(6)},${gpsCoords.lng.toFixed(6)}` : '',
     device: deviceInfo
   };
@@ -458,20 +574,26 @@ async function doClock(type) {
     btn.innerHTML = origHTML;
 
     if (data.success) {
-      // 打上班卡後 → 有尚未下班的紀錄；打下班卡後 → 無
       if (type === 'in') {
-        todayRecord = { clockIn: payload.time, clockOut: null };
+        todayRecord = { clockIn: clockTime, clockInDate: clockDate, clockOut: null };
         hasOpenRecord = true;
+        openRecordClockInDate = clockDate;
       } else {
-        if (todayRecord) todayRecord.clockOut = payload.time;
+        if (todayRecord) {
+          todayRecord.clockOut = clockTime;
+          todayRecord.clockOutDate = clockDate;
+        }
         hasOpenRecord = false;
+        openRecordClockInDate = null;
       }
       renderStatus(); updateButtons();
+      const overnight = data.overnight ? '（跨夜班已正確記錄）' : '';
       showResult(true, {
-        name, date: payload.date,
-        time: payload.time,
+        name,
+        date: clockDate,
+        time: clockTime,
         type: type === 'in' ? '上班打卡' : '下班打卡',
-        msg: data.message || '打卡成功！'
+        msg: (data.message || '打卡成功！') + overnight
       });
     } else {
       btn.disabled = false;
@@ -483,17 +605,14 @@ async function doClock(type) {
   }
 }
 
+// ── 結果 sheet ──
 function showResult(success, info) {
-  const icon = document.getElementById('resultIcon');
-  const title = document.getElementById('resultTitle');
-  const sub = document.getElementById('resultSub');
-  const infoDiv = document.getElementById('resultInfo');
-  icon.textContent = success ? '✅' : '❌';
-  icon.className = `result-icon ${success ? 'success' : 'error'}`;
-  title.textContent = success ? '打卡成功！' : '打卡失敗';
-  title.className = `result-title ${success ? 'success' : 'error'}`;
-  sub.textContent = info.msg || '';
-  infoDiv.innerHTML = `
+  document.getElementById('resultIcon').textContent = success ? '✅' : '❌';
+  document.getElementById('resultIcon').className = `result-icon ${success ? 'success' : 'error'}`;
+  document.getElementById('resultTitle').textContent = success ? '打卡成功！' : '打卡失敗';
+  document.getElementById('resultTitle').className = `result-title ${success ? 'success' : 'error'}`;
+  document.getElementById('resultSub').textContent = info.msg || '';
+  document.getElementById('resultInfo').innerHTML = `
     <div class="result-row"><span class="result-label">員工姓名</span><span class="result-value">${info.name}</span></div>
     <div class="result-row"><span class="result-label">打卡類型</span><span class="result-value">${info.type}</span></div>
     <div class="result-row"><span class="result-label">日期</span><span class="result-value">${info.date}</span></div>
@@ -501,21 +620,87 @@ function showResult(success, info) {
   `;
   document.getElementById('overlay').classList.add('show');
 }
+function closeResult() { document.getElementById('overlay').classList.remove('show'); }
 
-function closeResult() {
-  document.getElementById('overlay').classList.remove('show');
-}
-
+// ── 錯誤訊息 ──
 function showError(msg) {
   const el = document.getElementById('errorMsg');
-  el.textContent = '⚠️ ' + msg;
-  el.classList.add('show');
+  el.textContent = '⚠️ ' + msg; el.classList.add('show');
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+function clearError() { document.getElementById('errorMsg').classList.remove('show'); }
 
-function clearError() {
-  document.getElementById('errorMsg').classList.remove('show');
+// ── 新增人員 modal ──
+function openAddMember() {
+  document.getElementById('newName').value = '';
+  document.getElementById('newWeekday').value = '';
+  document.getElementById('newHoliday').value = '';
+  setAddAlert('', '');
+  document.getElementById('addMemberModal').classList.add('show');
+  setTimeout(() => document.getElementById('newName').focus(), 300);
 }
+function closeAddMember() {
+  document.getElementById('addMemberModal').classList.remove('show');
+}
+function handleModalOverlayClick(e) {
+  if (e.target === document.getElementById('addMemberModal')) closeAddMember();
+}
+
+function setAddAlert(msg, type) {
+  const el = document.getElementById('addAlert');
+  if (!msg) { el.classList.remove('show'); return; }
+  el.textContent = msg;
+  el.className = `modal-alert ${type} show`;
+}
+
+async function submitAddMember() {
+  const name    = document.getElementById('newName').value.trim();
+  const weekday = document.getElementById('newWeekday').value;
+  const holiday = document.getElementById('newHoliday').value;
+
+  if (!name) return setAddAlert('請輸入員工姓名', 'error');
+
+  const btn = document.getElementById('btnConfirmAdd');
+  btn.disabled = true;
+  btn.textContent = '新增中...';
+
+  try {
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({
+        action: 'addEmployee',
+        name,
+        weekdayRate: weekday ? Number(weekday) : 0,
+        holidayRate: holiday ? Number(holiday) : 0,
+        admin: '員工自助新增'
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      setAddAlert(`✅ 已新增「${name}」，可以開始打卡囉！`, 'success');
+      await loadEmployees();
+      // 自動選到新增的員工
+      const sel = document.getElementById('empSelect');
+      sel.value = name;
+      setTimeout(() => {
+        closeAddMember();
+        onEmpChange();
+      }, 1500);
+    } else {
+      setAddAlert(data.message || '新增失敗，請重試', 'error');
+    }
+  } catch(e) {
+    setAddAlert('網路錯誤，請重試', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = '新增';
+}
+
+// Enter 鍵快速提交
+document.getElementById('newName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAddMember();
+});
 
 // Init
 loadEmployees();
